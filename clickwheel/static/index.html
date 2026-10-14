@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Clickwheel</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/neutral.css">
+  <script type="module" src="/js/app.js"></script>
+</head>
+<body class="ss-body">
+  <header class="navbar topbar">
+    <div class="wrap topbar-in">
+      <a class="wordmark" href="/">Clickwheel</a>
+      <div class="topbar-right">
+        <ul class="engine" aria-label="Engine" id="engine" hidden>
+          <li class="badge badge-silver badge-sq" id="eng-encoder">Encoder</li>
+          <li class="badge badge-silver badge-sq" id="eng-ytdlp">yt-dlp</li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <section class="band" aria-label="Clickwheel">
+    <div class="wm" aria-hidden="true" id="wm">01</div>
+    <div class="wrap hero">
+
+      <div class="hero-copy" id="intro" hidden>
+        <p class="eyebrow eyebrow-rule">Sector 01 / Source</p>
+        <h1 id="hero-title">Lofi to iPod</h1>
+        <i class="rule" aria-hidden="true"></i>
+        <p class="lede">Paste a YouTube link. The mix comes back as iPod-native audio, tagged, with its chapters cut into tracks.</p>
+
+        <form class="source" id="source-form" novalidate>
+          <div class="field" id="url-field">
+            <label for="url">YouTube link</label>
+            <input class="input" id="url" name="url" type="url" inputmode="url" autocomplete="off"
+                   autocapitalize="off" spellcheck="false" placeholder="https://www.youtube.com/watch?v=" required>
+            <span class="caption" id="url-caption" aria-live="polite">Videos and mixes. Chapters become tracks.</span>
+          </div>
+
+          <div class="options">
+            <div class="tabs" role="tablist" aria-label="Output format">
+              <button class="tab" role="tab" type="button" data-mode="aac" aria-selected="true">AAC 256</button>
+              <button class="tab" role="tab" type="button" data-mode="alac" aria-selected="false">ALAC lossless</button>
+            </div>
+            <label class="switch"><input type="checkbox" id="split" checked> Split chapters</label>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-primary btn-lg" id="go" type="submit" disabled>Download</button>
+            <button class="btn btn-ghost" id="cancel" type="button" hidden>Cancel</button>
+            <button class="btn btn-secondary" id="reset" type="button" hidden>New link</button>
+          </div>
+        </form>
+      </div>
+
+      <dl class="spec" id="spec" aria-label="Output">
+        <div><dt class="n">44.1</dt><dd class="eyebrow muted">kHz · iPod native</dd></div>
+        <div><dt class="n" id="spec-num">256</dt><dd class="eyebrow muted" id="spec-label">kbps · Apple AAC-LC</dd></div>
+        <div><dt class="n">600</dt><dd class="eyebrow muted">px · square cover</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <main class="wrap" id="main-view">
+    <section class="sector" id="mix" hidden aria-labelledby="mix-title">
+      <div class="sector-head">
+        <span class="sector-num" aria-hidden="true">02</span>
+        <div>
+          <p class="eyebrow eyebrow-rule">Sector 02 / Mix</p>
+          <h2 id="mix-title">Mix</h2>
+          <p class="caption" id="mix-meta"></p>
+        </div>
+      </div>
+
+      <div class="mix-body">
+        <img class="cover chamfer" id="cover" alt="Cover art preview" width="600" height="600" hidden>
+        <div class="tiles">
+          <div class="tile chamfer"><p class="eyebrow muted">Duration</p><p class="tile-num" id="t-duration">0:00</p><p class="caption">h:mm:ss</p></div>
+          <div class="tile chamfer"><p class="eyebrow muted">Tracks</p><p class="tile-num" id="t-tracks">1</p><p class="caption" id="t-tracks-cap">One file</p></div>
+          <div class="tile chamfer"><p class="eyebrow muted">Source</p><p class="tile-num" id="t-source">0</p><p class="caption" id="t-source-cap">kbps</p></div>
+          <div class="tile chamfer"><p class="eyebrow muted">Output</p><p class="tile-num" id="t-size">0</p><p class="caption" id="t-size-cap">MB est.</p></div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="ss-table tracks">
+          <thead><tr><th class="right">#</th><th>Track</th><th>Artist</th><th class="right">Time</th></tr></thead>
+          <tbody id="track-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="sector" id="run" hidden aria-labelledby="run-title">
+      <div class="sector-head">
+        <span class="sector-num" aria-hidden="true">03</span>
+        <div>
+          <p class="eyebrow eyebrow-rule">Sector 03 / Run</p>
+          <h2 id="run-title">Fetch</h2>
+          <p class="caption" id="run-name"></p>
+        </div>
+      </div>
+
+      <div class="run-body">
+        <p class="run-num" id="run-num" role="progressbar" aria-label="Job progress"
+           aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">0%</p>
+        <div class="run-meta">
+          <p class="run-detail" id="run-detail">Queued</p>
+          <p class="caption data" id="run-stats"></p>
+        </div>
+      </div>
+
+      <div class="lap">
+        <div class="lap-sectors">
+          <div class="lap-track" id="s1"></div>
+          <div class="lap-track" id="s2"></div>
+          <div class="lap-track" id="s3"></div>
+        </div>
+        <div class="lap-labels">
+          <span class="eyebrow muted" id="s1-label">S1 · Fetch</span>
+          <span class="eyebrow muted" id="s2-label">S2 · Encode</span>
+          <span class="eyebrow muted" id="s3-label">S3 · Pack</span>
+        </div>
+      </div>
+
+      <div class="toast toast-danger alert" id="run-error" role="alert" hidden>
+        <p class="eyebrow muted" id="run-error-title"></p>
+        <p id="run-error-message"></p>
+        <details id="run-error-more" hidden><summary class="caption">Detail</summary><pre class="data" id="run-error-detail"></pre></details>
+      </div>
+    </section>
+
+    <section class="sector" id="log" hidden aria-labelledby="log-title">
+      <div class="sector-head">
+        <span class="sector-num" aria-hidden="true">04</span>
+        <div>
+          <p class="eyebrow eyebrow-rule">Sector 04 / Log</p>
+          <h2 id="log-title">Saved this session</h2>
+          <p class="caption">Files stay ready for an hour, then the server deletes them.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="ss-table">
+          <thead><tr><th>File</th><th>Format</th><th class="right">Tracks</th><th class="right">Size</th><th class="right">Save</th></tr></thead>
+          <tbody id="log-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footband">
+    <div class="wrap foot">
+      <span class="big">Clickwheel</span>
+      <div class="row">
+        <span>One link in. A tagged album out. Personal use only.</span>
+        <span class="data" id="foot-version">v1.2.0</span>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+</body>
+</html>

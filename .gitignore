@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Local config and work files
+.env
+work/
+
+# Editor and tool folders
+.DS_Store
+.vscode/
+.idea/
