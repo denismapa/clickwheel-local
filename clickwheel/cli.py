@@ -9,14 +9,17 @@ from __future__ import annotations
 import argparse
 import logging
 import shutil
+import socket
 import sys
 import threading
 import webbrowser
+from dataclasses import replace
 
 from .config import LOOPBACK_HOSTS, Settings
 from .source import js_runtime
 
 log = logging.getLogger("clickwheel")
+PORT_ATTEMPTS = 20
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -46,6 +49,16 @@ def serve(settings: Settings) -> int:
         log.warning("No JavaScript runtime found; YouTube needs one. Install it with: brew install deno")
     log.info("Local edition: no sign-in, so Clickwheel only listens on this computer.")
 
+    port = free_port(settings.host, settings.port)
+    if port is None:
+        last = settings.port + PORT_ATTEMPTS - 1
+        log.error("Ports %d to %d are all in use. Set CLICKWHEEL_PORT to a free port.", settings.port, last)
+        return 1
+    if port != settings.port:
+        log.warning("Port %d is in use (another Clickwheel?), so this one uses %d.", settings.port, port)
+    # Each port keeps its own job folder, so two Clickwheels never clear each other's files.
+    settings = replace(settings, port=port, work_dir=settings.work_dir / f"port-{port}")
+
     browse_host = "localhost" if settings.host in LOOPBACK_HOSTS | {"0.0.0.0", "::"} else settings.host
     url = f"http://{browse_host}:{settings.port}/"
     log.info("Clickwheel on %s (files in %s)", url, settings.work_dir)
@@ -53,3 +66,18 @@ def serve(settings: Settings) -> int:
         threading.Timer(1.5, webbrowser.open, args=(url,)).start()
     uvicorn.run(create_app(settings), host=settings.host, port=settings.port, log_level="warning")
     return 0
+
+
+def free_port(host: str, start: int, attempts: int = PORT_ATTEMPTS) -> int | None:
+    """The first port from `start` that nothing is listening on, or None."""
+    address = "127.0.0.1" if host == "localhost" else host
+    family = socket.AF_INET6 if ":" in address else socket.AF_INET
+    for port in range(start, min(start + attempts, 65536)):
+        with socket.socket(family, socket.SOCK_STREAM) as probe:
+            probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                probe.bind((address, port))
+            except OSError:
+                continue
+            return port
+    return None
