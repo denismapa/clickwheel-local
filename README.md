@@ -46,7 +46,7 @@ Every file also carries:
 ./run.sh
 ```
 
-The first run builds `.venv` and installs the pinned dependencies. Then the app opens at http://localhost:8765.
+The first run builds `.venv` and installs the pinned dependencies. Then the app opens at http://localhost:8765. If that port is taken, it uses the next free one (8766, 8767, …) and the log says which.
 
 ## Use
 
@@ -66,8 +66,8 @@ Copy `.env.example` to `.env`; `run.sh` reads it. Every value is optional.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `CLICKWHEEL_PORT` | `8765` | Port on 127.0.0.1 |
-| `CLICKWHEEL_WORK_DIR` | `<system temp>/clickwheel` | Where jobs are processed |
+| `CLICKWHEEL_PORT` | `8765` | Port on 127.0.0.1; if it is taken, the next free one is used |
+| `CLICKWHEEL_WORK_DIR` | `<system temp>/clickwheel` | Where jobs are processed, in a `port-<n>` folder per running copy |
 | `CLICKWHEEL_MAX_JOBS` | `2` | Jobs running at once |
 | `CLICKWHEEL_ENCODE_WORKERS` | `4` | Parallel track encodes per job |
 | `CLICKWHEEL_MAX_DURATION_MIN` | `720` | Longest video accepted |
