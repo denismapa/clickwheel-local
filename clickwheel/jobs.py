@@ -78,7 +78,7 @@ class Job:
                 self.speed = self.eta = None
 
     def fetch_progress(self, progress: FetchProgress) -> None:
-        self.report(pipeline.FETCH, progress.fraction, "Downloading source")
+        self.report(pipeline.FETCH, progress.fraction, progress.note or "Downloading source")
         with self._lock:
             self.speed, self.eta = progress.speed, progress.eta
 
