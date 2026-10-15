@@ -48,6 +48,8 @@ Every file also carries:
 
 The first run builds `.venv` and installs the pinned dependencies. Then the app opens at http://localhost:8765. If that port is taken, it uses the next free one (8766, 8767, …) and the log says which.
 
+To update, run `git pull && ./run.sh`. [CHANGELOG.md](CHANGELOG.md) lists what changed in each version.
+
 ## Use
 
 1. Paste a YouTube link: a video, a mix, `youtu.be`, Shorts or `music.youtube.com`. Clickwheel reads it and shows the duration, track list, source format and a size estimate.
