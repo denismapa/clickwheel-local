@@ -100,6 +100,7 @@ CLICKWHEEL_LIVE=1 .venv/bin/python -m pytest -m live
 | `SOURCE REFUSED.` on every link | YouTube changed. Update the `yt-dlp[default]` pin in `requirements.txt` to the latest release, then `./run.sh` |
 | `NO JAVASCRIPT RUNTIME.` | Install Deno |
 | `YOUTUBE BLOCKED THE REQUEST.` | YouTube is rate-limiting your network. Wait a few minutes |
+| `YOUTUBE REFUSED THE STREAM.` | YouTube refused the download three times in a row (Clickwheel retries on its own first). Wait a minute, then press Retry |
 | `Clickwheel needs the '…' package` | Start it with `./run.sh`, which uses the project's `.venv` |
 
 ## Privacy

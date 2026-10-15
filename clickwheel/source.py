@@ -31,11 +31,12 @@ _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 class SourceError(Exception):
     """A user-facing failure: a short title, one line of advice, raw detail."""
 
-    def __init__(self, title: str, message: str, detail: str = ""):
+    def __init__(self, title: str, message: str, detail: str = "", *, retryable: bool = False):
         super().__init__(f"{title} {message}")
         self.title = title
         self.message = message
         self.detail = detail
+        self.retryable = retryable
 
 
 @dataclass(frozen=True)
@@ -50,6 +51,15 @@ class FetchProgress:
     fraction: float
     speed: float | None = None
     eta: float | None = None
+    note: str | None = None  # shown instead of the usual detail, e.g. while retrying
+
+
+# YouTube now and then refuses a freshly signed stream (403) or drops a
+# connection; asking yt-dlp again gets new links and usually works.
+FETCH_ATTEMPTS = 3
+RETRY_DELAYS_S = (2.0, 5.0)
+_RETRYABLE = ("http error 403", "http error 500", "http error 502", "http error 503", "http error 504",
+              "timed out", "connection reset", "incompleteread", "remote end closed")
 
 
 # (needles in yt-dlp's message, title, advice)
@@ -73,6 +83,10 @@ def to_source_error(exc: Exception) -> SourceError:
     for needles, title, message in _KNOWN_ERRORS:
         if any(n in lowered for n in needles):
             return SourceError(title, message, detail)
+    if any(n in lowered for n in _RETRYABLE):
+        return SourceError("YOUTUBE REFUSED THE STREAM.",
+                           f"Clickwheel tried {FETCH_ATTEMPTS} times. Wait a minute, then press Retry.",
+                           detail, retryable=True)
     return SourceError("SOURCE REFUSED.", "yt-dlp could not read this video. Retry, or update yt-dlp.", detail)
 
 
@@ -142,8 +156,31 @@ def fetch(
     dest: Path,
     on_progress: Callable[[FetchProgress], None],
     cancelled: threading.Event,
+    delays: tuple[float, ...] = RETRY_DELAYS_S,
 ) -> Download:
-    """Download the best audio stream and the thumbnail into dest."""
+    """Download the best audio stream and the thumbnail into dest, retrying refusals."""
+    attempts = len(delays) + 1
+    for attempt in range(1, attempts + 1):
+        try:
+            return _fetch_once(url, dest, on_progress, cancelled)
+        except SourceError as exc:
+            if not exc.retryable or attempt == attempts:
+                raise
+            log.warning("fetch attempt %d of %d refused (%s); retrying with fresh links",
+                        attempt, attempts, exc.detail[:120])
+            on_progress(FetchProgress(0.0, note=f"YouTube refused the stream. Retrying ({attempt + 1} of {attempts})"))
+            if cancelled.wait(delays[attempt - 1]):
+                raise Cancelled() from exc
+            shutil.rmtree(dest, ignore_errors=True)
+    raise AssertionError("unreachable")
+
+
+def _fetch_once(
+    url: str,
+    dest: Path,
+    on_progress: Callable[[FetchProgress], None],
+    cancelled: threading.Event,
+) -> Download:
     dest.mkdir(parents=True, exist_ok=True)
 
     def hook(status: dict) -> None:
